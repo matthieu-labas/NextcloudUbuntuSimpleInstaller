@@ -11,9 +11,24 @@ It's a simplification over it on several points:
 * it does *not* require a reboot, though it is recommended after upgrading all packages at the end of the installation
 * it is *idempotent*: you should be able to run it several times and it should not mess up the system. If you can't, it should be considered as a bug.
 
-A simple script to install the latest Nextcloud version, with PostgreSQL, Apache, Redis and APCU.
+## Installation
 
-## Installing Webmin
+1. Copy the `vars.template` to `vars` and edit the parameters:
+    * `NCBASE` is where the Nextcloud archive will be extracted (i.e. `$NCBASE/nexcloud` usually)
+    * `NCDATA` is the Nextcloud data directory. Whether a simple folder, a simple disk, LLVM or RAID mount is up to the System Administrator
+    * `NCUSER` is the Nextcloud Administrator. It is *not* a system account, but the login you should use when logging in the Nextcloud instance
+    * `NCPASS` is the Nextcloud Administrator password
+    * `PGDB_PASS` is the PostgreSQL administrator password
+    * `DBNAME` is the Nextcloud database name
+    * `PHPVER` is the PHP version that should be installed. If not defined, the default PHP will be installed (`apt install php`) and its version will be read (`PHP_VERSION` constant)
+2. As a sudoer, run `sudo ./nextcloud_install.sh`
+    * A log file will be created detailing the main steps
+3. Recommended: upgrade the whole system
+    * `apt update -q4 && apt dist-upgrade -y && apt autoremove --purge -y && apt autoclean`
+
+## Bonus: installing Webmin
+
+Because Webmin is such a cool tool, you can use the following snipet to install it (run as root):
 ```
 if curl -fsSL http://www.webmin.com/jcameron-key.asc | sudo apt-key add - ; then
     echo "deb https://download.webmin.com/download/repository sarge contrib" > /etc/apt/sources.list.d/webmin.list
@@ -21,4 +36,3 @@ if curl -fsSL http://www.webmin.com/jcameron-key.asc | sudo apt-key add - ; then
     apt install -qy webmin
 fi
 ```
-
