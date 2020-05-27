@@ -14,12 +14,12 @@ It's a simplification over it on several points:
 ## Installation
 
 1. Copy the `vars.template` to `vars` and edit the parameters:
-    * `NCBASE` is where the Nextcloud archive will be extracted (i.e. `$NCBASE/nexcloud` usually)
-    * `NCDATA` is the Nextcloud data directory. Whether a simple folder, a simple disk, LLVM or RAID mount is up to the System Administrator
-    * `NCUSER` is the Nextcloud Administrator. It is *not* a system account, but the login you should use when logging in the Nextcloud instance
-    * `NCPASS` is the Nextcloud Administrator password
-    * `PGDB_PASS` is the PostgreSQL administrator password
-    * `DBNAME` is the Nextcloud database name
+    * `NCBASE` (default: `/var/www`) is where the Nextcloud archive will be extracted (i.e. `$NCBASE/nexcloud` usually)
+    * `NCDATA` (default: none) is the Nextcloud data directory. Whether a simple folder, a simple disk, LLVM or RAID mount is up to the System Administrator. **It is the only mandatory parameter**.
+    * `NCUSER` (default: `ncadmin`) is the Nextcloud Administrator. It is *not* a system account, but the login you should use when logging in the Nextcloud instance
+    * `NCPASS` (default: auto-generated) is the Nextcloud Administrator password
+    * `PGDB_PASS` (default: auto-generated) is the PostgreSQL administrator password
+    * `DBNAME` (default: `nextcloud`) is the Nextcloud database name
     * `PHPVER` is the PHP version that should be installed. If not defined, the default PHP will be installed (`apt install php`) and its version will be read (`PHP_VERSION` constant)
 2. As a sudoer, run `sudo ./nextcloud_install.sh`
     * A log file will be created detailing the main steps

@@ -13,6 +13,18 @@ if [ $uid -ne 0 ] ; then
 	exit 1
 fi
 
+gen_passwd() {
+    local length=$1
+    local charset="$2"
+    local password=""
+    while [ ${#password} -lt "$length" ] ; do
+        password=$(echo "$password""$(head -c 100 /dev/urandom | LC_ALL=C tr -dc "$charset")" | fold -w "$length" | head -n 1)
+    done
+    echo "$password"
+}
+SHUF=$(shuf -i 25-29 -n 1)
+
+
 # Get configuration
 if [ -f ./vars ] ; then
 	. ./vars
@@ -25,6 +37,18 @@ fi
 if [ ! -d "$NCDATA" ] ; then
 	echo "$NCDATA does not exist. Exiting..."
 	exit 1
+fi
+
+NCBASE=${NCBASE:-/var/www}
+NCUSER=${NCUSER:-ncadmin}
+if [ -z "$DBPASS" ] ; then
+	NCPASS=$(gen_passwd "$SHUF" "a-zA-Z0-9@#*=")
+	log "[NEXTCLOUD] Generated password for user \"$NCUSER\" is \"$NCPASS\""
+fi
+DBNAME=${DBNAME:-nextcloud}
+if [ -z "$DBPASS" ] ; then
+	DBPASS=$(gen_passwd "$SHUF" "a-zA-Z0-9@#*=")
+	log "[DB] Generated password is \"$DBPASS\""
 fi
 
 NCPATH=$NCBASE/nextcloud
@@ -49,18 +73,6 @@ restart_webserver() {
 occ_command() {
 	sudo -u www-data php "$NCPATH"/occ "$@";
 }
-
-gen_passwd() {
-    local length=$1
-    local charset="$2"
-    local password=""
-    while [ ${#password} -lt "$length" ] ; do
-        password=$(echo "$password""$(head -c 100 /dev/urandom | LC_ALL=C tr -dc "$charset")" | fold -w "$length" | head -n 1)
-    done
-    echo "$password"
-}
-SHUF=$(shuf -i 25-29 -n 1)
-
 
 calculate_php_fpm() {
 	# Minimum amount of max children (lower than this won't work with 2 GB RAM)
@@ -545,22 +557,7 @@ if ! grep -q "http://lost.l-w.ca/0x05/apache-mod_proxy_fcgi-and-php-fpm" /etc/ap
 fi
 
 
-# Webmin is great, but it's not Nextcloud...
-#log "[WEBMIN] Installing Webmin..."
-#if curl -fsSL http://www.webmin.com/jcameron-key.asc | sudo apt-key add - ; then
-#    echo "deb https://download.webmin.com/download/repository sarge contrib" > /etc/apt/sources.list.d/webmin.list
-#    apt update -q4
-#    apt install -qy webmin
-#fi
-
 apt remove --purge -y lxd
-
-# Global system update is to be done on a regular basis anyway...
-#log "[SYSTEM] Updating..."
-#apt update -q4
-#apt dist-upgrade -y
-#apt autoremove --purge -y
-#apt autoclean
 
 log "[NEXTCLOUD] Configuring access..."
 occ_command config:system:set logtimezone --value="$(cat /etc/timezone)"
