@@ -9,6 +9,7 @@ It's a simplification over it on several points:
 * it does *not* pre-install some Nextcloud apps: they can be installed simply when the server is up
 * it does *not* pre-install Webmin: though a must-have, this script is focused on Nextcloud only
 * it does *not* require a reboot, though it is recommended after upgrading all packages at the end of the installation
+* it does *not* install a Let's Encrypt certificate (in the TODO list)
 * it is *idempotent*: you should be able to run it several times and it should not mess up the system. If you can't, it should be considered as a bug.
 
 ## Installation
