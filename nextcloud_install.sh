@@ -3,6 +3,7 @@ echo "Thank you https://github.com/nextcloud/vm"
 
 # System is supposed to be almost blank, with the following:
 # - locale and timezone already set
+# - Server FQDN available (through `hostname --fqdn`)
 # - Nextcloud data directory $NCDATA must exist
 
 # Check root
@@ -30,7 +31,7 @@ NCPATH=$NCBASE/nextcloud
 
 LOGFILE="$PWD/nextcloud_install-$(date +%Y-%m-%d-%H-%M).log"
 log() {
-	echo "$(date +%Y-%m-%d-%H-%M-%S) $1" | tee -a $LOGFILE
+	echo -e "$(date +"%Y-%m-%d %H-%M-%S") $1" | tee -a $LOGFILE
 }
 
 check_network() {
@@ -568,9 +569,9 @@ occ_command config:system:set overwrite.cli.url --value="http://localhost/"
 occ_command config:system:set htaccess.RewriteBase --value="/"
 occ_command maintenance:update:htaccess
 
-log "[SSH] Recreating keys..."
-rm -v /etc/ssh/ssh_host_*
-dpkg-reconfigure openssh-server
+#log "[SSH] Recreating keys..."
+#rm -v /etc/ssh/ssh_host_*
+#dpkg-reconfigure openssh-server
 
 a2dismod status
 calculate_php_fpm
