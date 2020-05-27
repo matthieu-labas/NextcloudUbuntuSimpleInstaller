@@ -1,0 +1,19 @@
+# Where Nextcloud tarball will be extracted
+NCBASE=/var/www
+
+# Nextcloud data directory (must exist)
+NCDATA=/mnt/data
+
+# Nexcloud admin user
+NCUSER=ncadmin
+# Nexcloud admin password
+NCPASS=NextCloudAdministrator
+
+# PostgreSQL superuser password
+PGDB_PASS=NextCloudPostGresPassword
+# Nextcloud database name
+DBNAME=nextcloud
+
+# Required PHP version for Nextcloud (or comment out to use the one currently installed, or retrieve the latest if none is installed)
+PHPVER=7.4
+
