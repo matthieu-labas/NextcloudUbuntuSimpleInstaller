@@ -71,7 +71,8 @@ restart_webserver() {
 }
 
 occ_command() {
-	sudo -u www-data php "$NCPATH"/occ "$@";
+	log "[OCC] $@"
+	sudo -u www-data php "$NCPATH"/occ "$@" 2>&1 | tee $LOGFILE
 }
 
 calculate_php_fpm() {
@@ -203,7 +204,7 @@ if [ ! -f "$PHP_POOL_DIR"/nextcloud.conf ] ; then
 [Nextcloud]
 user = www-data
 group = www-data
-listen = /run/php/php"$PHPVER"-fpm.nextcloud.sock
+listen = /run/php/php${PHPVER}-fpm.nextcloud.sock
 listen.owner = www-data
 listen.group = www-data
 pm = dynamic
@@ -238,30 +239,24 @@ if [ ! -d "$NCPATH" ] ; then
 	curl -fSLO --retry 3 https://download.nextcloud.com/server/releases/nextcloud-$VER.tar.bz2
 	log "[NEXTCLOUD] Unpacking version $VER..."
 	tar -xjf nextcloud-$VER.tar.bz2 && rm -f nextcloud-$VER.tar.bz2
-else
-	log "[NEXTCLOUD] Already installed"
-fi
-
-log "[NEXTCLOUD] Setting up file permissions..."
-find "${NCPATH}"/ -type f -print0 | xargs -0 chmod 0640
-find "${NCPATH}"/ -type d -print0 | xargs -0 chmod 0750
-chown -R root:www-data "${NCPATH}"/
-chown -R www-data:www-data "${NCPATH}"/apps/
-chown -R www-data:www-data "${NCPATH}"/config/
-chown -R www-data:www-data "${NCPATH}"/themes/
-chown -R www-data:www-data "${NCPATH}"/updater/
-chown -R www-data:www-data "${NCDATA}"/
-if [ -f "${NCPATH}"/.htaccess ] ; then
-    chmod 0644 "${NCPATH}"/.htaccess
-    chown root:www-data "${NCPATH}"/.htaccess
-fi
-if [ -f "${NCDATA}"/.htaccess ] ; then
-    chmod 0644 "${NCDATA}"/.htaccess
-    chown root:www-data "${NCDATA}"/.htaccess
-fi
-
-cd $NCPATH
-if [ ! -d "$NCPATH" ] ; then
+	if [ ! -d "$NCPATH" ] ; then
+		log "[NEXTCLOUD] error during install, exiting"
+		exit 2
+	fi
+	log "[NEXTCLOUD] Setting up file permissions..."
+	find "${NCPATH}"/ -type f -print0 | xargs -0 chmod 0640
+	find "${NCPATH}"/ -type d -print0 | xargs -0 chmod 0750
+	chown -R root:www-data "${NCPATH}"/
+	chown -R www-data:www-data "${NCPATH}"/apps/
+	chown -R www-data:www-data "${NCPATH}"/config/
+	chown -R www-data:www-data "${NCPATH}"/themes/
+	chown -R www-data:www-data "${NCPATH}"/updater/
+	chown -R www-data:www-data "${NCDATA}"/
+	if [ -f "${NCPATH}"/.htaccess ] ; then
+		chmod 0644 "${NCPATH}"/.htaccess
+		chown root:www-data "${NCPATH}"/.htaccess
+	fi
+	cd $NCPATH
 	log "[NEXTCLOUD] Installing Nexcloud..."
 	occ_command maintenance:install \
 		--data-dir="$NCDATA" \
@@ -272,7 +267,7 @@ if [ ! -d "$NCPATH" ] ; then
 		--admin-user="$NCUSER" \
 		--admin-pass="$NCPASS"
 else
-	log "[NEXTCLOUD] Nexcloud already installed"
+	log "[NEXTCLOUD] Already installed"
 fi
 
 log "[NEXTCLOUD] Configuring retention..."
@@ -281,7 +276,7 @@ occ_command config:system:set versions_retention_obligation --value="auto, 365"
 
 if ! crontab -lu www-data | grep -q "$NCPATH/cron.php" > /dev/null ; then
 	log "[NEXTCLOUD] Configuring cron..."
-	crontab -u www-data -l | { cat; echo "*/5  *  *  *  * php -f \"$NCPATH/cron.php\" > /dev/null 2>&1"; } | crontab -u www-data -
+	crontab -lu www-data | { cat; echo "*/5  *  *  *  * php -f \"$NCPATH/cron.php\" > /dev/null 2>&1"; } | crontab -u www-data -
 else
 	log "[NEXTCLOUD] Cron already configured"
 fi
@@ -311,11 +306,11 @@ else
 	log "[PHP] OPcache already configured"
 fi
 
-sed -i "s|;emergency_restart_threshold.*|emergency_restart_threshold = 10|g" /etc/php/"$PHPVER"/fpm/php-fpm.conf
-sed -i "s|;emergency_restart_interval.*|emergency_restart_interval = 1m|g" /etc/php/"$PHPVER"/fpm/php-fpm.conf
-sed -i "s|;process_control_timeout.*|process_control_timeout = 10|g" /etc/php/"$PHPVER"/fpm/php-fpm.conf
+sed -i "s|;emergency_restart_threshold.*|emergency_restart_threshold = 10|g" /etc/php/$PHPVER/fpm/php-fpm.conf
+sed -i "s|;emergency_restart_interval.*|emergency_restart_interval = 1m|g" /etc/php/$PHPVER/fpm/php-fpm.conf
+sed -i "s|;process_control_timeout.*|process_control_timeout = 10|g" /etc/php/$PHPVER/fpm/php-fpm.conf
 
-if [ ! -f "$PHP_FPM_DIR"/conf.d/20-pdo_pgsql.ini ] || ! grep -q "^[PostgresSQL]" "$PHP_FPM_DIR"/conf.d/20-pdo_pgsql.ini ; then
+if [ ! -f "$PHP_FPM_DIR/conf.d/20-pdo_pgsql.ini" ] || ! grep -q "^[PostgresSQL]" "$PHP_FPM_DIR/conf.d/20-pdo_pgsql.ini" ; then
 	log "[PHP] Configuring Postgres..."
 	{
 	echo ""
@@ -326,7 +321,7 @@ if [ ! -f "$PHP_FPM_DIR"/conf.d/20-pdo_pgsql.ini ] || ! grep -q "^[PostgresSQL]"
 	echo "pgsql.max_links = -1"
 	echo "pgsql.ignore_notice = 0"
 	echo "pgsql.log_notice = 0"
-	} >> "$PHP_FPM_DIR"/conf.d/20-pdo_pgsql.ini
+	} >> "$PHP_FPM_DIR/conf.d/20-pdo_pgsql.ini"
 else
 	log "[PHP] Postgres already configured"
 fi
@@ -345,7 +340,7 @@ if ! grep -q "extension=redis.so" "$PHP_INI" ; then
 else
 	log "[REDIS] PHP already configured"
 fi
-if ! grep -q "'\\\\OC\\\\Memcache\\\\APCu'" $NCPATH/config/config.php ; then
+if ! grep -q "'\\\\OC\\\\Memcache\\\\APCu'" "$NCPATH/config/config.php" ; then
 	log "[REDIS] Configuring Nextcloud..."
 	sed -i "s|);||g" $NCPATH/config/config.php
 	cat <<ADD_TO_CONFIG >> $NCPATH/config/config.php
@@ -365,6 +360,8 @@ if ! grep -q "'\\\\OC\\\\Memcache\\\\APCu'" $NCPATH/config/config.php ; then
 ADD_TO_CONFIG
 else
 	log "[REDIS] Nextcloud already configured"
+	# Retrieve initially configured password
+	REDIS_PASS=$(grep "'password' => '" "$NCPATH/config/config.php" | cut -d"'" -f 4)
 fi
 
 log "[REDIS] Configuring System..."
@@ -457,22 +454,22 @@ if [ ! -f $SITES_AVAILABLE/$HTTP_CONF ] ; then
     </FilesMatch>
     DocumentRoot $NCPATH
     <Directory $NCPATH>
-    Options Indexes FollowSymLinks
-    AllowOverride All
-    Require all granted
-    Satisfy Any
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+        Satisfy Any
     </Directory>
     <IfModule mod_dav.c>
-    Dav off
+        Dav off
     </IfModule>
     <Directory "$NCDATA">
-    # just in case if .htaccess gets disabled
-    Require all denied
+        # just in case if .htaccess gets disabled
+        Require all denied
     </Directory>
     # The following lines prevent .htaccess and .htpasswd files from being
     # viewed by Web clients.
     <Files ".ht*">
-    Require all denied
+        Require all denied
     </Files>
     # Disable HTTP TRACE method.
     TraceEnable off
@@ -484,7 +481,7 @@ if [ ! -f $SITES_AVAILABLE/$HTTP_CONF ] ; then
     SetEnv HTTP_HOME $NCPATH
     # Avoid "Sabre\DAV\Exception\BadRequest: expected filesize XXXX got XXXX"
     <IfModule mod_reqtimeout.c>
-    RequestReadTimeout body=0
+        RequestReadTimeout body=0
     </IfModule>
 </VirtualHost>
 HTTP_CREATE
@@ -504,23 +501,23 @@ if [ ! -f $SITES_AVAILABLE/$TLS_CONF ] ; then
     </FilesMatch>
     DocumentRoot $NCPATH
     <Directory $NCPATH>
-    Options Indexes FollowSymLinks
-    AllowOverride All
-    Require all granted
-    Satisfy Any
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+        Satisfy Any
     </Directory>
     <IfModule mod_dav.c>
-    Dav off
+        Dav off
     </IfModule>
     <Directory "$NCDATA">
     # just in case if .htaccess gets disabled
-    Require all denied
+        Require all denied
     </Directory>
     
     # The following lines prevent .htaccess and .htpasswd files from being
     # viewed by Web clients.
     <Files ".ht*">
-    Require all denied
+        Require all denied
     </Files>
     
     # Disable HTTP TRACE method.
@@ -533,7 +530,7 @@ if [ ! -f $SITES_AVAILABLE/$TLS_CONF ] ; then
     SetEnv HTTP_HOME $NCPATH
     # Avoid "Sabre\DAV\Exception\BadRequest: expected filesize XXXX got XXXX"
     <IfModule mod_reqtimeout.c>
-    RequestReadTimeout body=0
+        RequestReadTimeout body=0
     </IfModule>
 ### LOCATION OF CERT FILES ###
     SSLCertificateFile /etc/ssl/certs/ssl-cert-snakeoil.pem
