@@ -22,6 +22,7 @@ It's a simplification over it on several points:
     * `PGDB_PASS` (default: auto-generated) is the PostgreSQL administrator password
     * `DBNAME` (default: `nextcloud`) is the Nextcloud database name
     * `PHPVER` is the PHP version that should be installed. If not defined, the default PHP will be installed (`apt install php`) and its version will be read (`PHP_VERSION` constant)
+    * `NEXTCLOUDVER` is the Nextcloud version that should be installed. If not defined, the latest available one will be used. Variable value will be grepped as `grep "^$NEXTCLOUDVER"` so it can be either "major" or "major.minor" or the fully-qualified version
 2. As a sudoer, run `sudo ./nextcloud_install.sh`
     * A log file will be created detailing the main steps
 3. Recommended: upgrade the whole system

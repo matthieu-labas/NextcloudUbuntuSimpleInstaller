@@ -15,5 +15,7 @@ PGDB_PASS=NextCloudPostGresPassword
 DBNAME=nextcloud
 
 # Required PHP version for Nextcloud (or comment out to use the one currently installed, or retrieve the latest if none is installed)
-PHPVER=7.4
+PHPVER=8.0
 
+# Nextcloud version to retrieve (or comment out to get the latest available one)
+NEXTCLOUDVER=20

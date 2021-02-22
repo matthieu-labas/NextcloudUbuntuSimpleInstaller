@@ -231,10 +231,15 @@ fi
 
 calculate_php_fpm
 
+[ -d "$NCBASE" ] || mkdir -p "$NCBASE"
 cd $NCBASE
 if [ ! -d "$NCPATH" ] ; then
 	log "[NEXTCLOUD] Checking latest version..."
-	VER=$(curl -s -m 900 https://download.nextcloud.com/server/releases/ | sed --silent 's/.*href="nextcloud-\([^"]\+\).zip.asc".*/\1/p' | sort --version-sort | tail -1)
+	VER=$(curl -s -m 900 https://download.nextcloud.com/server/releases/ | sed --silent 's/.*href="nextcloud-\([^"]\+\).zip.asc".*/\1/p' | sort --version-sort | grep "^$NEXTCLOUDVER" | tail -1)
+	if [ -z "$VER" ] ; then
+		log "[NEXTCLOUD] cannot find Nextcloud version '$NEXTCLOUDVER', exiting"
+		exit 2
+	fi
 	log "[NEXTCLOUD] Downloading version $VER..."
 	curl -fSLO --retry 3 https://download.nextcloud.com/server/releases/nextcloud-$VER.tar.bz2
 	log "[NEXTCLOUD] Unpacking version $VER..."
