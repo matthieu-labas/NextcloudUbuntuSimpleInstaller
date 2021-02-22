@@ -72,7 +72,7 @@ restart_webserver() {
 
 occ_command() {
 	log "[OCC] $@"
-	sudo -u www-data php "$NCPATH"/occ "$@" 2>&1 | tee $LOGFILE
+	sudo -u www-data php "$NCPATH"/occ "$@" 2>&1 | tee -a $LOGFILE
 }
 
 calculate_php_fpm() {
@@ -142,7 +142,7 @@ apt update -q4
 
 # Install Postgres
 log "[DB] Installing PostgreSQL..."
-apt install -qy postgresql
+apt install -qy postgresql | tee -a $LOGFILE
 if ! sudo -u postgres psql -l | grep "$DBNAME" > /dev/null ; then
 	log "[DB] Create database $DBNAME and user $NCUSER..."
 	sudo -u postgres psql <<END
@@ -155,7 +155,7 @@ fi
 
 # Install Apache
 log "[HTTP] Installing Apache..."
-apt install -qy apache2
+apt install -qy apache2 | tee -a $LOGFILE
 log "[HTTP] Enabling Apache modules..."
 a2enmod rewrite headers proxy proxy_fcgi setenvif env mime dir authz_core alias ssl
 a2dismod mpm_prefork
@@ -195,7 +195,7 @@ PHP_FPM_DIR=/etc/php/$PHPVER/fpm
 PHP_INI=$PHP_FPM_DIR/php.ini
 PHP_POOL_DIR=$PHP_FPM_DIR/pool.d
 log "[PHP] Installing PHP$PHPVER..."
-apt install -qy php"$PHPVER"-fpm php"$PHPVER"-intl php"$PHPVER"-ldap php"$PHPVER"-imap php"$PHPVER"-gd php"$PHPVER"-pgsql php"$PHPVER"-curl php"$PHPVER"-xml php"$PHPVER"-zip php"$PHPVER"-mbstring php"$PHPVER"-soap php"$PHPVER"-json php"$PHPVER"-gmp php"$PHPVER"-bz2 php-pear php"$PHPVER"-dev php-imagick
+apt install -qy php"$PHPVER"-fpm php"$PHPVER"-intl php"$PHPVER"-ldap php"$PHPVER"-imap php"$PHPVER"-gd php"$PHPVER"-pgsql php"$PHPVER"-curl php"$PHPVER"-xml php"$PHPVER"-zip php"$PHPVER"-mbstring php"$PHPVER"-soap php"$PHPVER"-json php"$PHPVER"-gmp php"$PHPVER"-bz2 php-pear php"$PHPVER"-dev php"$PHPVER"-bcmath php-imagick
 a2enconf php"$PHPVER"-fpm
 
 if [ ! -f "$PHP_POOL_DIR"/nextcloud.conf ] ; then
@@ -234,7 +234,7 @@ calculate_php_fpm
 [ -d "$NCBASE" ] || mkdir -p "$NCBASE"
 cd $NCBASE
 if [ ! -d "$NCPATH" ] ; then
-	log "[NEXTCLOUD] Checking latest version..."
+	log "[NEXTCLOUD] Checking latest version $NEXTCLOUDVER..."
 	VER=$(curl -s -m 900 https://download.nextcloud.com/server/releases/ | sed --silent 's/.*href="nextcloud-\([^"]\+\).zip.asc".*/\1/p' | sort --version-sort | grep "^$NEXTCLOUDVER" | tail -1)
 	if [ -z "$VER" ] ; then
 		log "[NEXTCLOUD] cannot find Nextcloud version '$NEXTCLOUDVER', exiting"
