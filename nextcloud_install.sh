@@ -240,7 +240,7 @@ if [ ! -d "$NCPATH" ] ; then
 	log "[NEXTCLOUD] Unpacking version $VER..."
 	tar -xjf nextcloud-$VER.tar.bz2 && rm -f nextcloud-$VER.tar.bz2
 	if [ ! -d "$NCPATH" ] ; then
-		log "[NEXTCLOUD] error during install, exiting"
+		log "[NEXTCLOUD] error while unpacking, exiting"
 		exit 2
 	fi
 	log "[NEXTCLOUD] Setting up file permissions..."
@@ -266,6 +266,11 @@ if [ ! -d "$NCPATH" ] ; then
 		--database-pass="$PGDB_PASS" \
 		--admin-user="$NCUSER" \
 		--admin-pass="$NCPASS"
+	err=$?
+	if [ $err -ne 0 ] ; then
+		log "[NEXTCLOUD] error $err during install, exiting"
+		exit 2
+	fi
 else
 	log "[NEXTCLOUD] Already installed"
 fi
